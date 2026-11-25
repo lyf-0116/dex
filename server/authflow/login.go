@@ -159,9 +159,18 @@ func (h *Handler) handleConnectorLogin(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		switch conn := conn.Connector.(type) {
 		case connector.CallbackConnector:
-			// Use the auth request ID as the "state" token.
-			//
-			// TODO(ericchiang): Is this appropriate or should we also be using a nonce?
+			// Use the auth request ID as the "state" token. The ID is not
+			// secret on its own — it is visible in the upstream provider's URL
+			// and logs — so bind a random nonce to it in an HttpOnly cookie.
+			// The callback requires both, answering not just "does this auth
+			// request exist" but "did this browser start it".
+			stateNonce, err := newStateNonce()
+			if err != nil {
+				h.Logger.ErrorContext(r.Context(), "failed to generate state nonce", "err", err)
+				h.renderError(r, w, http.StatusInternalServerError, "Login error.")
+				return
+			}
+			h.setStateCookie(w, *authReq, stateNonce)
 			callbackURL, connData, err := conn.LoginURL(scopes, h.IssuerURL.AbsURL("/callback"), authReq.ID)
 			if err != nil {
 				h.Logger.ErrorContext(r.Context(), "connector returned error when creating callback", "connector_id", connID, "err", err)
@@ -199,6 +208,13 @@ func (h *Handler) handleConnectorLogin(w http.ResponseWriter, r *http.Request) {
 
 			http.Redirect(w, r, loginURL.String(), http.StatusFound)
 		case connector.SAMLConnector:
+			stateNonce, err := newStateNonce()
+			if err != nil {
+				h.Logger.ErrorContext(r.Context(), "failed to generate state nonce", "err", err)
+				h.renderError(r, w, http.StatusInternalServerError, "Connector Login Error")
+				return
+			}
+			h.setStateCookie(w, *authReq, stateNonce)
 			action, value, err := conn.POSTData(scopes, authReq.ID)
 			if err != nil {
 				h.Logger.ErrorContext(r.Context(), "creating SAML data", "err", err)

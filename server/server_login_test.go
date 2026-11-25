@@ -389,6 +389,8 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 	authReqID := "test"
 	expiry := time.Now().Add(100 * time.Second)
 	resTypes := []string{oauth2.ResponseTypeCode}
+	stateHMACKey := []byte("callback-skip-approval-key")
+	stateNonce := "callback-skip-approval-nonce"
 
 	tests := []struct {
 		name                  string
@@ -406,6 +408,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: true,
 			},
 			expectedRes:           "/approval",
@@ -420,6 +423,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: true,
 			},
 			expectedRes:           "/approval",
@@ -434,6 +438,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: false,
 			},
 			expectedRes:           "/approval",
@@ -448,6 +453,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: false,
 			},
 			expectedRes:           "/cb",
@@ -462,6 +468,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: true,
 				Scopes:              []string{"offline_access"},
 			},
@@ -477,6 +484,7 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 				RedirectURI:         "cb",
 				Expiry:              expiry,
 				ResponseTypes:       resTypes,
+				HMACKey:             stateHMACKey,
 				ForceApprovalPrompt: false,
 				Scopes:              []string{"offline_access"},
 			},
@@ -499,7 +507,9 @@ func TestHandleConnectorCallbackWithSkipApproval(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			path := fmt.Sprintf("/callback/%s?state=%s", connID, authReqID)
-			s.ServeHTTP(rr, httptest.NewRequest("GET", path, nil))
+			callbackReq := httptest.NewRequest("GET", path, nil)
+			callbackReq.AddCookie(stateTestCookie(authReqID, stateHMACKey, stateNonce))
+			s.ServeHTTP(rr, callbackReq)
 
 			require.Equal(t, 303, rr.Code)
 

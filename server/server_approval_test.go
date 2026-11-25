@@ -25,6 +25,7 @@ func TestSkipApprovalWithExistingConsent(t *testing.T) {
 	connID := "mock"
 	authReqID := "test-consent-skip"
 	expiry := time.Now().Add(100 * time.Second)
+	stateHMACKey := []byte("consent-skip-state-key")
 
 	tests := []struct {
 		name        string
@@ -111,12 +112,15 @@ func TestSkipApprovalWithExistingConsent(t *testing.T) {
 				ResponseTypes:       []string{oauth2.ResponseTypeCode},
 				Scopes:              tc.scopes,
 				ForceApprovalPrompt: tc.forcePrompt,
+				HMACKey:             stateHMACKey,
 			}
 			require.NoError(t, s.storage.CreateAuthRequest(ctx, authReq))
 
 			rr := httptest.NewRecorder()
 			reqPath := fmt.Sprintf("/callback/%s?state=%s", connID, authReqID)
-			s.ServeHTTP(rr, httptest.NewRequest("GET", reqPath, nil))
+			callbackReq := httptest.NewRequest("GET", reqPath, nil)
+			callbackReq.AddCookie(stateTestCookie(authReqID, stateHMACKey, "consent-skip-state-nonce"))
+			s.ServeHTTP(rr, callbackReq)
 
 			require.Equal(t, 303, rr.Code)
 			_, restPath := followFlow(t, s, rr)

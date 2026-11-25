@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"log/slog"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -31,6 +35,29 @@ func newLogger(t *testing.T) *slog.Logger {
 
 func boolPtr(v bool) *bool {
 	return &v
+}
+
+// stateTestCookie builds the anti-CSRF state cookie a browser receives when a
+// login starts, mirroring authflow.setStateCookie. Tests that seed an
+// AuthRequest directly and then drive /callback use it to present the same
+// browser context the real flow would.
+func stateTestCookie(authID string, hmacKey []byte, nonce string) *http.Cookie {
+	mac := hmac.New(sha256.New, hmacKey)
+	mac.Write([]byte(authID))
+	mac.Write([]byte{'|'})
+	mac.Write([]byte(nonce))
+	sig := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return &http.Cookie{Name: "dex_state", Value: nonce + "." + sig}
+}
+
+// newCookieHTTPClient returns an HTTP client with a cookie jar, so the
+// anti-CSRF state cookie set when a login starts is sent back on the callback,
+// exactly as a real browser would.
+func newCookieHTTPClient(t *testing.T) *http.Client {
+	t.Helper()
+	jar, err := cookiejar.New(nil)
+	require.NoError(t, err)
+	return &http.Client{Jar: jar}
 }
 
 // isFlowPath reports whether a redirect target is an internal step of the login

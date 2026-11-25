@@ -104,7 +104,8 @@ func TestHandleAuthCode(t *testing.T) {
 				RedirectURL:  redirectURL,
 			}
 
-			resp, err := http.Get(oauth2Client.server.URL + "/login")
+			loginClient := newCookieHTTPClient(t)
+			resp, err := loginClient.Get(oauth2Client.server.URL + "/login")
 			require.NoError(t, err)
 
 			resp.Body.Close()

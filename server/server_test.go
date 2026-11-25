@@ -755,7 +755,8 @@ func TestOAuth2CodeFlow(t *testing.T) {
 			//   3. Client exchanges "code" for "token" (id_token, refresh_token, etc.).
 			//   4. Test is run with OAuth2 token response.
 			//
-			resp, err := http.Get(oauth2Client.URL + "/login")
+			httpClient := newCookieHTTPClient(t)
+			resp, err := httpClient.Get(oauth2Client.URL + "/login")
 			if err != nil {
 				t.Fatalf("get failed: %v", err)
 			}
@@ -883,27 +884,26 @@ func TestOAuth2ImplicitFlow(t *testing.T) {
 		return nil
 	}
 
-	httpClient := &http.Client{
+	httpClient := newCookieHTTPClient(t)
+	httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		// net/http servers don't preserve URL fragments when passing the request to
 		// handlers. The only way to get at that values is to check the redirect on
 		// the client side.
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) > 10 {
-				return errors.New("too many redirects")
-			}
+		if len(via) > 10 {
+			return errors.New("too many redirects")
+		}
 
-			// If we're being redirected back to the client server, inspect the URL fragment
-			// for an ID Token.
-			u := req.URL.String()
-			if strings.HasPrefix(u, oauth2Server.URL) {
-				if err := checkIDToken(req.URL); err == nil {
-					gotIDToken = true
-				} else {
-					t.Error(err)
-				}
+		// If we're being redirected back to the client server, inspect the URL fragment
+		// for an ID Token.
+		u := req.URL.String()
+		if strings.HasPrefix(u, oauth2Server.URL) {
+			if err := checkIDToken(req.URL); err == nil {
+				gotIDToken = true
+			} else {
+				t.Error(err)
 			}
-			return nil
-		},
+		}
+		return nil
 	}
 
 	resp, err := httpClient.Get(oauth2Server.URL + "/login")
@@ -1028,7 +1028,8 @@ func TestCrossClientScopes(t *testing.T) {
 		RedirectURL: redirectURL,
 	}
 
-	resp, err := http.Get(oauth2Server.URL + "/login")
+	loginClient := newCookieHTTPClient(t)
+	resp, err := loginClient.Get(oauth2Server.URL + "/login")
 	if err != nil {
 		t.Fatalf("get failed: %v", err)
 	}
@@ -1149,7 +1150,8 @@ func TestCrossClientScopesWithAzpInAudienceByDefault(t *testing.T) {
 		RedirectURL: redirectURL,
 	}
 
-	resp, err := http.Get(oauth2Server.URL + "/login")
+	loginClient := newCookieHTTPClient(t)
+	resp, err := loginClient.Get(oauth2Server.URL + "/login")
 	if err != nil {
 		t.Fatalf("get failed: %v", err)
 	}
@@ -1445,7 +1447,8 @@ func TestRefreshTokenFlow(t *testing.T) {
 		RedirectURL:  redirectURL,
 	}
 
-	resp, err := http.Get(oauth2Client.server.URL + "/login")
+	loginClient := newCookieHTTPClient(t)
+	resp, err := loginClient.Get(oauth2Client.server.URL + "/login")
 	if err != nil {
 		t.Fatalf("get failed: %v", err)
 	}
@@ -1457,7 +1460,7 @@ func TestRefreshTokenFlow(t *testing.T) {
 	}
 
 	// Login in again to receive a new token.
-	resp, err = http.Get(oauth2Client.server.URL + "/login")
+	resp, err = loginClient.Get(oauth2Client.server.URL + "/login")
 	if err != nil {
 		t.Fatalf("get failed: %v", err)
 	}
@@ -1549,7 +1552,8 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				data := url.Values{}
 				data.Set("client_id", clientID)
 				data.Add("scope", strings.Join(requestedScopes, " "))
-				resp, err := http.PostForm(codeURL.String(), data)
+				browserClient := newCookieHTTPClient(t)
+				resp, err := browserClient.PostForm(codeURL.String(), data)
 				if err != nil {
 					t.Errorf("Could not request device code: %v", err)
 				}
@@ -1576,7 +1580,7 @@ func TestOAuth2DeviceFlow(t *testing.T) {
 				verifyURL.Path = path.Join(verifyURL.Path, "/device/auth/verify_code")
 				urlData := url.Values{}
 				urlData.Set("user_code", deviceCode.UserCode)
-				resp, err = http.PostForm(verifyURL.String(), urlData)
+				resp, err = browserClient.PostForm(verifyURL.String(), urlData)
 				if err != nil {
 					t.Errorf("Error Posting Form: %v", err)
 				}

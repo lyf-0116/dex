@@ -1599,6 +1599,7 @@ func TestLoginKeepsOnlyLogoutDataInAuthSession(t *testing.T) {
 	} {
 		t.Run(tc.connectorID, func(t *testing.T) {
 			authReqID := "login-" + tc.connectorID
+			stateHMACKey := []byte("logout-login-state-key-" + tc.connectorID)
 			require.NoError(t, server.storage.CreateAuthRequest(ctx, storage.AuthRequest{
 				ID:            authReqID,
 				ConnectorID:   tc.connectorID,
@@ -1607,10 +1608,13 @@ func TestLoginKeepsOnlyLogoutDataInAuthSession(t *testing.T) {
 				Expiry:        time.Now().Add(time.Minute),
 				ResponseTypes: []string{oauth2.ResponseTypeCode},
 				Scopes:        []string{"openid"},
+				HMACKey:       stateHMACKey,
 			}))
 
 			rr := httptest.NewRecorder()
-			server.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/callback/"+tc.connectorID+"?state="+authReqID, nil))
+			callbackReq := httptest.NewRequest(http.MethodGet, "/callback/"+tc.connectorID+"?state="+authReqID, nil)
+			callbackReq.AddCookie(stateTestCookie(authReqID, stateHMACKey, "logout-login-state-nonce"))
+			server.ServeHTTP(rr, callbackReq)
 			require.Equal(t, http.StatusSeeOther, rr.Code, rr.Body.String())
 
 			sessions, err := server.storage.ListAuthSessions(ctx)

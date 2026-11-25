@@ -46,6 +46,16 @@ func (h *Handler) handleConnectorCallback(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// The state value only proves the auth request exists. Prove the callback
+	// belongs to this browser by requiring the nonce cookie issued when the
+	// login started; without it an attacker can replay a state value they
+	// observed in their own login to bind their identity to a victim's session.
+	if !validStateCookie(r, authReq.HMACKey, authReq.ID) {
+		h.Logger.ErrorContext(r.Context(), "state parameter does not match the browser's login session")
+		h.renderError(r, w, http.StatusBadRequest, "User session error.")
+		return
+	}
+
 	connID, err := url.PathUnescape(mux.Vars(r)["connector"])
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "failed to parse connector", "err", err)
@@ -110,5 +120,6 @@ func (h *Handler) handleConnectorCallback(w http.ResponseWriter, r *http.Request
 		h.Logger.ErrorContext(ctx, "failed to create/update auth session", "err", err)
 	}
 
+	h.clearStateCookie(w)
 	http.Redirect(w, r, h.buildContinueURL(authReq), http.StatusSeeOther)
 }
