@@ -66,6 +66,11 @@ func (h *Handler) validateMFARequest(w http.ResponseWriter, r *http.Request) (*m
 		h.renderError(r, w, http.StatusInternalServerError, "Database error.")
 		return nil, false
 	}
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+		return nil, false
+	}
 	if !authReq.LoggedIn {
 		h.Logger.ErrorContext(ctx, "auth request does not have an identity for MFA verification")
 		h.renderError(r, w, http.StatusInternalServerError, "Login process not yet finalized.")
@@ -201,6 +206,11 @@ func (h *Handler) handleMFA(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.ErrorContext(ctx, "failed to get auth request", "err", err)
 		h.renderError(r, w, http.StatusInternalServerError, "Database error.")
+		return
+	}
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
 		return
 	}
 	if !authReq.LoggedIn {

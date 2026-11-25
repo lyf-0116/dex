@@ -313,6 +313,8 @@ type AuthRequest struct {
 	// Used in ID token as "auth_time" claim.
 	AuthTime time.Time
 
+	// Expiry is the deadline after which this request must not be used. Flow
+	// consumers enforce it on every read; garbage collection only removes the row.
 	Expiry time.Time
 
 	// Has the user proved their identity through a backing identity provider?

@@ -2,9 +2,11 @@ package authflow
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
+	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/storage"
 )
 
@@ -16,10 +18,16 @@ func (h *Handler) trySessionLogin(ctx context.Context, r *http.Request, w http.R
 // trySessionLoginWithSession completes the login from an existing session: a
 // direct session for the client, or, failing that, an SSO session shared by
 // another client. SSO sharing is unidirectional — a source sharing with a target
-// does not mean the target shares back. Returns false when no session applies.
+// does not mean the target shares back. Returns false when no session applies;
+// an expired auth request is rendered as an error and counts as handled.
 func (h *Handler) trySessionLoginWithSession(ctx context.Context, r *http.Request, w http.ResponseWriter, authReq *storage.AuthRequest, session *storage.AuthSession) bool {
 	if session == nil {
 		return false
+	}
+	if internal.AuthRequestExpired(*authReq, h.Now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+		return true
 	}
 
 	now := h.Now()
@@ -91,12 +99,19 @@ func (h *Handler) finishSessionLogin(ctx context.Context, r *http.Request, w htt
 
 	// Update AuthRequest with stored identity and auth_time from last login.
 	if err := h.Storage.UpdateAuthRequest(ctx, authReq.ID, func(a storage.AuthRequest) (storage.AuthRequest, error) {
+		if internal.AuthRequestExpired(a, h.Now()) {
+			return a, internal.ErrAuthRequestExpired
+		}
 		a.LoggedIn = true
 		a.Claims = claims
 		a.ConnectorID = session.ConnectorID
 		a.AuthTime = ui.LastLogin
 		return a, nil
 	}); err != nil {
+		if errors.Is(err, internal.ErrAuthRequestExpired) {
+			h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+			return true
+		}
 		h.Logger.ErrorContext(ctx, "session: failed to update auth request", "err", err)
 		return false
 	}
@@ -117,6 +132,10 @@ func (h *Handler) finishSessionLogin(ctx context.Context, r *http.Request, w htt
 	if err != nil {
 		h.Logger.ErrorContext(ctx, "session: failed to get auth request", "err", err)
 		return false
+	}
+	if internal.AuthRequestExpired(updated, h.Now()) {
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+		return true
 	}
 	http.Redirect(w, r, h.buildContinueURL(updated), http.StatusSeeOther)
 	return true

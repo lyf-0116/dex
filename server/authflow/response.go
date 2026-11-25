@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/server/oauth2"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
@@ -23,13 +24,13 @@ import (
 // it mints the code (and, for implicit/hybrid flows, the tokens) and redirects
 // the browser back to the client, or renders the out-of-band page.
 func (h *Handler) writeResponse(w http.ResponseWriter, r *http.Request, authReq storage.AuthRequest) {
-	h.Sessions.UpdateTokenIssuedAt(r, authReq.ClientID)
-
 	ctx := r.Context()
-	if h.Now().After(authReq.Expiry) {
-		h.renderError(r, w, http.StatusBadRequest, "User session has expired.")
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
 		return
 	}
+
+	h.Sessions.UpdateTokenIssuedAt(r, authReq.ClientID)
 
 	if err := h.Storage.DeleteAuthRequest(ctx, authReq.ID); err != nil {
 		if err != storage.ErrNotFound {

@@ -34,6 +34,11 @@ func (h *Handler) handleContinue(w http.ResponseWriter, r *http.Request) {
 		h.renderError(r, w, http.StatusInternalServerError, "Database error.")
 		return
 	}
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+		return
+	}
 	if !authReq.LoggedIn {
 		h.Logger.ErrorContext(ctx, "flow dispatcher reached for auth request without an identity")
 		h.renderError(r, w, http.StatusInternalServerError, "Login process not yet finalized.")

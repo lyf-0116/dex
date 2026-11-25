@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/dexidp/dex/connector"
+	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/server/useridentity"
 	"github.com/dexidp/dex/storage"
@@ -39,6 +40,10 @@ func (h *Handler) sessionAuthRequest(ctx context.Context, authReq storage.AuthRe
 // finalizeLogin associates the user's identity with the current AuthRequest, then returns
 // the approval page's path.
 func (h *Handler) finalizeLogin(ctx context.Context, identity connector.Identity, authReq storage.AuthRequest, conn connector.Connector) (storage.AuthRequest, error) {
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		return storage.AuthRequest{}, internal.ErrAuthRequestExpired
+	}
+
 	// Enforce the account lock and persist the user's identity the same way
 	// every login path must. The UserIdentity row only exists when the
 	// sessions feature is on; a first-time login cannot be blocked.
@@ -58,6 +63,9 @@ func (h *Handler) finalizeLogin(ctx context.Context, identity connector.Identity
 	}
 
 	updater := func(a storage.AuthRequest) (storage.AuthRequest, error) {
+		if internal.AuthRequestExpired(a, h.Now()) {
+			return a, internal.ErrAuthRequestExpired
+		}
 		a.LoggedIn = true
 		a.Claims = claims
 		a.ConnectorData = identity.ConnectorData
@@ -65,7 +73,7 @@ func (h *Handler) finalizeLogin(ctx context.Context, identity connector.Identity
 		return a, nil
 	}
 	if err := h.Storage.UpdateAuthRequest(ctx, authReq.ID, updater); err != nil {
-		return storage.AuthRequest{}, fmt.Errorf("failed to update auth request: %v", err)
+		return storage.AuthRequest{}, fmt.Errorf("failed to update auth request: %w", err)
 	}
 	// Keep the in-memory copy in sync with what was persisted so later reads
 	// (the next-step decision below) see the identity we just stored.
@@ -128,5 +136,12 @@ func (h *Handler) finalizeLogin(ctx context.Context, identity connector.Identity
 
 	// The identity is persisted; return the finalized request so the caller can
 	// create the session and advance the flow.
-	return h.Storage.GetAuthRequest(ctx, authReq.ID)
+	updated, err := h.Storage.GetAuthRequest(ctx, authReq.ID)
+	if err != nil {
+		return storage.AuthRequest{}, err
+	}
+	if internal.AuthRequestExpired(updated, h.Now()) {
+		return storage.AuthRequest{}, internal.ErrAuthRequestExpired
+	}
+	return updated, nil
 }

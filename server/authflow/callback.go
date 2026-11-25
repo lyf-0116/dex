@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/dexidp/dex/connector"
+	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/server/tokens"
 	"github.com/dexidp/dex/storage"
 )
@@ -43,6 +44,11 @@ func (h *Handler) handleConnectorCallback(w http.ResponseWriter, r *http.Request
 		}
 		h.Logger.ErrorContext(r.Context(), "failed to get auth request", "err", err)
 		h.renderError(r, w, http.StatusInternalServerError, "Database error.")
+		return
+	}
+	if internal.AuthRequestExpired(authReq, h.Now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
 		return
 	}
 
@@ -98,6 +104,10 @@ func (h *Handler) handleConnectorCallback(w http.ResponseWriter, r *http.Request
 
 	authReq, err = h.finalizeLogin(ctx, identity, authReq, conn.Connector)
 	if err != nil {
+		if errors.Is(err, internal.ErrAuthRequestExpired) {
+			h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
+			return
+		}
 		h.Logger.ErrorContext(r.Context(), "failed to finalize login", "err", err)
 		h.renderError(r, w, http.StatusInternalServerError, "Login error.")
 		return

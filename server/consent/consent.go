@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/server/oauth2"
@@ -25,6 +26,7 @@ type Handler struct {
 	IssuerURL    oauth2.IssuerURL
 	Sessions     *session.Manager
 	SkipApproval bool
+	Now          func() time.Time
 }
 
 // renderError renders a user-facing HTML error page.
@@ -35,6 +37,13 @@ func (h *Handler) renderError(r *http.Request, w http.ResponseWriter, status int
 // Mount registers the consent endpoint.
 func (h *Handler) Mount(mux router.Mux) {
 	mux.HandleFunc("/approval", h.handleApproval)
+}
+
+func (h *Handler) now() time.Time {
+	if h.Now != nil {
+		return h.Now()
+	}
+	return time.Now()
 }
 
 // buildApprovedURL builds the HMAC-protected URL that returns to the authorize
@@ -75,6 +84,11 @@ func (h *Handler) handleApproval(w http.ResponseWriter, r *http.Request) {
 		}
 		h.Logger.ErrorContext(ctx, "failed to get auth request", "err", err)
 		h.renderError(r, w, http.StatusInternalServerError, "Database error.")
+		return
+	}
+	if internal.AuthRequestExpired(authReq, h.now()) {
+		h.Logger.InfoContext(ctx, "auth request expired", "auth_request_id", authReq.ID)
+		h.renderError(r, w, http.StatusBadRequest, internal.AuthRequestExpiredMessage)
 		return
 	}
 	if !authReq.LoggedIn {

@@ -129,7 +129,7 @@ func newTestHandler(t *testing.T, updateConfig func(c *testFlowConfig)) (*httpte
 	// independent step handlers that hand off by redirect.
 	sessions := &session.Manager{Storage: store, Config: tc.SessionConfig, Now: now, Logger: logger, IssuerURL: oauth2.IssuerURL{URL: *issuerURL}}
 	mfaManager := &mfa.Handler{IssuerURL: oauth2.IssuerURL{URL: *issuerURL}, Storage: store, Templates: tmpls, Logger: logger, MFAProviders: tc.MFAProviders, DefaultMFAChain: tc.DefaultMFAChain, Now: now, Connectors: conns}
-	consentManager := &consent.Handler{IssuerURL: oauth2.IssuerURL{URL: *issuerURL}, Storage: store, Templates: tmpls, Logger: logger, Sessions: sessions, SkipApproval: tc.SkipApproval}
+	consentManager := &consent.Handler{IssuerURL: oauth2.IssuerURL{URL: *issuerURL}, Storage: store, Templates: tmpls, Logger: logger, Sessions: sessions, SkipApproval: tc.SkipApproval, Now: now}
 	logoutManager := &logout.Handler{Storage: store, Templates: tmpls, Logger: logger, Sessions: sessions, Connectors: conns, Issuer: issuer, Signer: sig, IssuerURL: oauth2.IssuerURL{URL: *issuerURL}}
 
 	tc.Sessions = sessions

@@ -345,6 +345,7 @@ func (s *Server) mount(routes router.Mux, c Config, rc resolvedConfig) {
 			IssuerURL:    s.issuerURL,
 			Sessions:     sessions,
 			SkipApproval: c.SkipApprovalScreen,
+			Now:          rc.now,
 		},
 		&logout.Handler{
 			Storage:     s.storage,
