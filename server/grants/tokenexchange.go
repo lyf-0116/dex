@@ -96,6 +96,7 @@ func (g *tokenExchange) Authorize(ctx context.Context, req *Request, client stor
 		Claims:      tokens.ClaimsFromIdentity(identity),
 		Scopes:      req.Scopes,
 		ConnectorID: req.ConnectorID,
+		DPoPJKT:     req.DPoPJKT,
 	}
 
 	// RFC 8693 returns a single requested token plus issued_token_type, not the
@@ -115,10 +116,14 @@ func (g *tokenExchange) Authorize(ctx context.Context, req *Request, client stor
 		return nil, &oauth2.Error{Type: oauth2.ServerError, Status: http.StatusInternalServerError}
 	}
 
+	tokenType := "bearer"
+	if req.DPoPJKT != "" {
+		tokenType = "DPoP"
+	}
 	return tokens.Response{
 		AccessToken:     token,
 		IssuedTokenType: reqType,
-		TokenType:       "bearer",
+		TokenType:       tokenType,
 		ExpiresIn:       int(time.Until(expiry).Seconds()),
 	}, nil
 }

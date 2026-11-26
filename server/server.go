@@ -281,9 +281,10 @@ func (s *Server) mount(routes router.Mux, c Config, rc resolvedConfig) {
 			IDJAGMetrics:        idJAGMetrics(c),
 		},
 		&userinfo.Handler{
-			Issuer: s.issuerURL.String(),
-			Signer: c.Signer,
-			Logger: s.logger,
+			Issuer:  s.issuerURL.String(),
+			Signer:  c.Signer,
+			Logger:  s.logger,
+			Storage: s.storage,
 		},
 		&introspection.Handler{
 			Issuer:        s.issuerURL.String(),

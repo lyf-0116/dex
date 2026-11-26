@@ -190,6 +190,9 @@ func (g *idJAG) Authorize(ctx context.Context, req *Request, client storage.Clie
 	if subjectClaims.EmailVerified {
 		claims.Email = subjectClaims.Email
 	}
+	if req.DPoPJKT != "" {
+		claims.Confirmation = &tokens.Confirmation{JWKThumbprint: req.DPoPJKT}
+	}
 
 	token, claims, err := g.issuer.SignIDJAG(ctx, claims, g.config.ValidFor)
 	if err != nil {

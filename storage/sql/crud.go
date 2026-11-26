@@ -322,16 +322,16 @@ func (c *conn) CreateRefresh(ctx context.Context, r storage.RefreshToken) error 
 			claims_user_id, claims_username, claims_preferred_username,
 			claims_email, claims_email_verified, claims_groups,
 			connector_id, connector_data,
-			token, obsolete_token, created_at, last_used
+			token, obsolete_token, dpop_jkt, created_at, last_used
 		)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16);
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);
 	`,
 		r.ID, r.ClientID, encoder(r.Scopes), r.Nonce,
 		r.Claims.UserID, r.Claims.Username, r.Claims.PreferredUsername,
 		r.Claims.Email, r.Claims.EmailVerified,
 		encoder(r.Claims.Groups),
 		r.ConnectorID, r.ConnectorData,
-		r.Token, r.ObsoleteToken, r.CreatedAt, r.LastUsed,
+		r.Token, r.ObsoleteToken, r.DPoPJKT, r.CreatedAt, r.LastUsed,
 	)
 	if err != nil {
 		if c.alreadyExistsCheck(err) {
@@ -367,17 +367,18 @@ func (c *conn) UpdateRefreshToken(ctx context.Context, id string, updater func(o
 				connector_data = $11,
 				token = $12,
                 obsolete_token = $13,
-				created_at = $14,
-				last_used = $15
+				dpop_jkt = $14,
+				created_at = $15,
+				last_used = $16
 			where
-				id = $16
+				id = $17
 		`,
 			r.ClientID, encoder(r.Scopes), r.Nonce,
 			r.Claims.UserID, r.Claims.Username, r.Claims.PreferredUsername,
 			r.Claims.Email, r.Claims.EmailVerified,
 			encoder(r.Claims.Groups),
 			r.ConnectorID, r.ConnectorData,
-			r.Token, r.ObsoleteToken, r.CreatedAt, r.LastUsed, id,
+			r.Token, r.ObsoleteToken, r.DPoPJKT, r.CreatedAt, r.LastUsed, id,
 		)
 		if err != nil {
 			return fmt.Errorf("update refresh token: %v", err)
@@ -398,7 +399,7 @@ func getRefresh(ctx context.Context, q querier, id string) (storage.RefreshToken
 			claims_email, claims_email_verified,
 			claims_groups,
 			connector_id, connector_data,
-			token, obsolete_token, created_at, last_used
+			token, obsolete_token, dpop_jkt, created_at, last_used
 		from refresh_token where id = $1;
 	`, id))
 }
@@ -410,7 +411,7 @@ func (c *conn) ListRefreshTokens(ctx context.Context) ([]storage.RefreshToken, e
 			claims_user_id, claims_username, claims_preferred_username,
 			claims_email, claims_email_verified, claims_groups,
 			connector_id, connector_data,
-			token, obsolete_token, created_at, last_used
+			token, obsolete_token, dpop_jkt, created_at, last_used
 		from refresh_token;
 	`)
 	if err != nil {
@@ -439,7 +440,7 @@ func scanRefresh(s scanner) (r storage.RefreshToken, err error) {
 		&r.Claims.Email, &r.Claims.EmailVerified,
 		decoder(&r.Claims.Groups),
 		&r.ConnectorID, &r.ConnectorData,
-		&r.Token, &r.ObsoleteToken, &r.CreatedAt, &r.LastUsed,
+		&r.Token, &r.ObsoleteToken, &r.DPoPJKT, &r.CreatedAt, &r.LastUsed,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -551,9 +552,10 @@ func (c *conn) UpdateClient(ctx context.Context, id string, updater func(old sto
 				post_logout_redirect_uris = $9,
 				sso_shared_with = $10,
 				backchannel_logout_uri = $11,
-				refresh_token_lifetime = $12
-			where id = $13;
-		`, nc.Secret, encoder(nc.RedirectURIs), encoder(nc.TrustedPeers), nc.Public, nc.Name, nc.LogoURL, encoder(nc.AllowedConnectors), encoder(nc.MFAChain), encoder(nc.PostLogoutRedirectURIs), encoder(nc.SSOSharedWith), nc.BackchannelLogoutURI, nc.RefreshTokenLifetime, id,
+				refresh_token_lifetime = $12,
+				require_dpop = $13
+			where id = $14;
+		`, nc.Secret, encoder(nc.RedirectURIs), encoder(nc.TrustedPeers), nc.Public, nc.Name, nc.LogoURL, encoder(nc.AllowedConnectors), encoder(nc.MFAChain), encoder(nc.PostLogoutRedirectURIs), encoder(nc.SSOSharedWith), nc.BackchannelLogoutURI, nc.RefreshTokenLifetime, nc.RequiresDPoP(), id,
 		)
 		if err != nil {
 			return fmt.Errorf("update client: %v", err)
@@ -565,12 +567,12 @@ func (c *conn) UpdateClient(ctx context.Context, id string, updater func(old sto
 func (c *conn) CreateClient(ctx context.Context, cli storage.Client) error {
 	_, err := c.Exec(`
 		insert into client (
-			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime
+			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime, require_dpop
 		)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 	`,
 		cli.ID, cli.Secret, encoder(cli.RedirectURIs), encoder(cli.TrustedPeers),
-		cli.Public, cli.Name, cli.LogoURL, encoder(cli.AllowedConnectors), encoder(cli.MFAChain), encoder(cli.PostLogoutRedirectURIs), encoder(cli.SSOSharedWith), cli.BackchannelLogoutURI, cli.RefreshTokenLifetime,
+		cli.Public, cli.Name, cli.LogoURL, encoder(cli.AllowedConnectors), encoder(cli.MFAChain), encoder(cli.PostLogoutRedirectURIs), encoder(cli.SSOSharedWith), cli.BackchannelLogoutURI, cli.RefreshTokenLifetime, cli.RequiresDPoP(),
 	)
 	if err != nil {
 		if c.alreadyExistsCheck(err) {
@@ -584,7 +586,7 @@ func (c *conn) CreateClient(ctx context.Context, cli storage.Client) error {
 func getClient(ctx context.Context, q querier, id string) (storage.Client, error) {
 	return scanClient(q.QueryRow(`
 		select
-			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime
+			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime, require_dpop
 	    from client where id = $1;
 	`, id))
 }
@@ -596,7 +598,7 @@ func (c *conn) GetClient(ctx context.Context, id string) (storage.Client, error)
 func (c *conn) ListClients(ctx context.Context) ([]storage.Client, error) {
 	rows, err := c.Query(`
 		select
-			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime
+			id, secret, redirect_uris, trusted_peers, public, name, logo_url, allowed_connectors, mfa_chain, post_logout_redirect_uris, sso_shared_with, backchannel_logout_uri, refresh_token_lifetime, require_dpop
 		from client;
 	`)
 	if err != nil {
@@ -625,7 +627,7 @@ func scanClient(s scanner) (cli storage.Client, err error) {
 	var ssoSharedWith []byte
 	err = s.Scan(
 		&cli.ID, &cli.Secret, decoder(&cli.RedirectURIs), decoder(&cli.TrustedPeers),
-		&cli.Public, &cli.Name, &cli.LogoURL, &allowedConnectors, &mfaChain, &postLogoutRedirectURIs, &ssoSharedWith, &cli.BackchannelLogoutURI, &cli.RefreshTokenLifetime,
+		&cli.Public, &cli.Name, &cli.LogoURL, &allowedConnectors, &mfaChain, &postLogoutRedirectURIs, &ssoSharedWith, &cli.BackchannelLogoutURI, &cli.RefreshTokenLifetime, &cli.RequireDPoP,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

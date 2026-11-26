@@ -60,7 +60,7 @@ func (i *Issuer) Issue(ctx context.Context, auth Authorization, code string, wit
 		return TokenSet{}, fmt.Errorf("create access token: %w", err)
 	}
 
-	ts := TokenSet{AccessToken: accessToken, Expiry: expiry}
+	ts := TokenSet{AccessToken: accessToken, Expiry: expiry, DPoPJKT: auth.DPoPJKT}
 
 	if HasOpenID(auth.Scopes) {
 		ts.IDToken, ts.Expiry, err = i.SignIDToken(ctx, auth, accessToken, code)
@@ -132,6 +132,9 @@ func (i *Issuer) signToken(ctx context.Context, auth Authorization, accessToken,
 	}
 
 	tok.SessionID = auth.SessionID
+	if auth.DPoPJKT != "" {
+		tok.Confirmation = &Confirmation{JWKThumbprint: auth.DPoPJKT}
+	}
 
 	signingAlg, err := i.signer.Algorithm(ctx)
 	if err != nil {

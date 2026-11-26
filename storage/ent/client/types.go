@@ -101,6 +101,7 @@ func toStorageClient(c *db.OAuth2Client) storage.Client {
 		SSOSharedWith:           c.SSOSharedWith,
 		BackchannelLogoutURI:    c.BackchannelLogoutURI,
 		RefreshTokenLifetime:    c.RefreshTokenLifetime,
+		RequireDPoP:             c.RequireDpop,
 		ClientCredentialsClaims: c.ClientCredentialsClaims,
 	}
 }
@@ -142,6 +143,7 @@ func toStorageRefreshToken(r *db.RefreshToken) storage.RefreshToken {
 		CreatedAt:     r.CreatedAt,
 		LastUsed:      r.LastUsed,
 		ClientID:      r.ClientID,
+		DPoPJKT:       r.DpopJkt,
 		ConnectorID:   r.ConnectorID,
 		ConnectorData: *r.ConnectorData,
 		Scopes:        r.Scopes,

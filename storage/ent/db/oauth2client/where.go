@@ -92,6 +92,11 @@ func RefreshTokenLifetime(v string) predicate.OAuth2Client {
 	return predicate.OAuth2Client(sql.FieldEQ(FieldRefreshTokenLifetime, v))
 }
 
+// RequireDpop applies equality check predicate on the "require_dpop" field. It's identical to RequireDpopEQ.
+func RequireDpop(v bool) predicate.OAuth2Client {
+	return predicate.OAuth2Client(sql.FieldEQ(FieldRequireDpop, v))
+}
+
 // SecretEQ applies the EQ predicate on the "secret" field.
 func SecretEQ(v string) predicate.OAuth2Client {
 	return predicate.OAuth2Client(sql.FieldEQ(FieldSecret, v))
@@ -505,6 +510,16 @@ func RefreshTokenLifetimeEqualFold(v string) predicate.OAuth2Client {
 // RefreshTokenLifetimeContainsFold applies the ContainsFold predicate on the "refresh_token_lifetime" field.
 func RefreshTokenLifetimeContainsFold(v string) predicate.OAuth2Client {
 	return predicate.OAuth2Client(sql.FieldContainsFold(FieldRefreshTokenLifetime, v))
+}
+
+// RequireDpopEQ applies the EQ predicate on the "require_dpop" field.
+func RequireDpopEQ(v bool) predicate.OAuth2Client {
+	return predicate.OAuth2Client(sql.FieldEQ(FieldRequireDpop, v))
+}
+
+// RequireDpopNEQ applies the NEQ predicate on the "require_dpop" field.
+func RequireDpopNEQ(v bool) predicate.OAuth2Client {
+	return predicate.OAuth2Client(sql.FieldNEQ(FieldRequireDpop, v))
 }
 
 // ClientCredentialsClaimsIsNil applies the IsNil predicate on the "client_credentials_claims" field.

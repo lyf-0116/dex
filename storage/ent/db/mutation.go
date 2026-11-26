@@ -6696,6 +6696,7 @@ type OAuth2ClientMutation struct {
 	appendsso_shared_with           []string
 	backchannel_logout_uri          *string
 	refresh_token_lifetime          *string
+	require_dpop                    *bool
 	client_credentials_claims       **storage.ClientCredentialsClaims
 	clearedFields                   map[string]struct{}
 	done                            bool
@@ -7439,6 +7440,42 @@ func (m *OAuth2ClientMutation) ResetRefreshTokenLifetime() {
 	delete(m.clearedFields, oauth2client.FieldRefreshTokenLifetime)
 }
 
+// SetRequireDpop sets the "require_dpop" field.
+func (m *OAuth2ClientMutation) SetRequireDpop(b bool) {
+	m.require_dpop = &b
+}
+
+// RequireDpop returns the value of the "require_dpop" field in the mutation.
+func (m *OAuth2ClientMutation) RequireDpop() (r bool, exists bool) {
+	v := m.require_dpop
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequireDpop returns the old "require_dpop" field's value of the OAuth2Client entity.
+// If the OAuth2Client object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OAuth2ClientMutation) OldRequireDpop(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequireDpop is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequireDpop requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequireDpop: %w", err)
+	}
+	return oldValue.RequireDpop, nil
+}
+
+// ResetRequireDpop resets all changes to the "require_dpop" field.
+func (m *OAuth2ClientMutation) ResetRequireDpop() {
+	m.require_dpop = nil
+}
+
 // SetClientCredentialsClaims sets the "client_credentials_claims" field.
 func (m *OAuth2ClientMutation) SetClientCredentialsClaims(scc *storage.ClientCredentialsClaims) {
 	m.client_credentials_claims = &scc
@@ -7522,7 +7559,7 @@ func (m *OAuth2ClientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OAuth2ClientMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.secret != nil {
 		fields = append(fields, oauth2client.FieldSecret)
 	}
@@ -7559,6 +7596,9 @@ func (m *OAuth2ClientMutation) Fields() []string {
 	if m.refresh_token_lifetime != nil {
 		fields = append(fields, oauth2client.FieldRefreshTokenLifetime)
 	}
+	if m.require_dpop != nil {
+		fields = append(fields, oauth2client.FieldRequireDpop)
+	}
 	if m.client_credentials_claims != nil {
 		fields = append(fields, oauth2client.FieldClientCredentialsClaims)
 	}
@@ -7594,6 +7634,8 @@ func (m *OAuth2ClientMutation) Field(name string) (ent.Value, bool) {
 		return m.BackchannelLogoutURI()
 	case oauth2client.FieldRefreshTokenLifetime:
 		return m.RefreshTokenLifetime()
+	case oauth2client.FieldRequireDpop:
+		return m.RequireDpop()
 	case oauth2client.FieldClientCredentialsClaims:
 		return m.ClientCredentialsClaims()
 	}
@@ -7629,6 +7671,8 @@ func (m *OAuth2ClientMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldBackchannelLogoutURI(ctx)
 	case oauth2client.FieldRefreshTokenLifetime:
 		return m.OldRefreshTokenLifetime(ctx)
+	case oauth2client.FieldRequireDpop:
+		return m.OldRequireDpop(ctx)
 	case oauth2client.FieldClientCredentialsClaims:
 		return m.OldClientCredentialsClaims(ctx)
 	}
@@ -7723,6 +7767,13 @@ func (m *OAuth2ClientMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRefreshTokenLifetime(v)
+		return nil
+	case oauth2client.FieldRequireDpop:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequireDpop(v)
 		return nil
 	case oauth2client.FieldClientCredentialsClaims:
 		v, ok := value.(*storage.ClientCredentialsClaims)
@@ -7872,6 +7923,9 @@ func (m *OAuth2ClientMutation) ResetField(name string) error {
 		return nil
 	case oauth2client.FieldRefreshTokenLifetime:
 		m.ResetRefreshTokenLifetime()
+		return nil
+	case oauth2client.FieldRequireDpop:
+		m.ResetRequireDpop()
 		return nil
 	case oauth2client.FieldClientCredentialsClaims:
 		m.ResetClientCredentialsClaims()
@@ -9227,6 +9281,7 @@ type RefreshTokenMutation struct {
 	connector_data            *[]byte
 	token                     *string
 	obsolete_token            *string
+	dpop_jkt                  *string
 	created_at                *time.Time
 	last_used                 *time.Time
 	clearedFields             map[string]struct{}
@@ -9878,6 +9933,42 @@ func (m *RefreshTokenMutation) ResetObsoleteToken() {
 	m.obsolete_token = nil
 }
 
+// SetDpopJkt sets the "dpop_jkt" field.
+func (m *RefreshTokenMutation) SetDpopJkt(s string) {
+	m.dpop_jkt = &s
+}
+
+// DpopJkt returns the value of the "dpop_jkt" field in the mutation.
+func (m *RefreshTokenMutation) DpopJkt() (r string, exists bool) {
+	v := m.dpop_jkt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDpopJkt returns the old "dpop_jkt" field's value of the RefreshToken entity.
+// If the RefreshToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RefreshTokenMutation) OldDpopJkt(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDpopJkt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDpopJkt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDpopJkt: %w", err)
+	}
+	return oldValue.DpopJkt, nil
+}
+
+// ResetDpopJkt resets all changes to the "dpop_jkt" field.
+func (m *RefreshTokenMutation) ResetDpopJkt() {
+	m.dpop_jkt = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *RefreshTokenMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -9984,7 +10075,7 @@ func (m *RefreshTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RefreshTokenMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.client_id != nil {
 		fields = append(fields, refreshtoken.FieldClientID)
 	}
@@ -10023,6 +10114,9 @@ func (m *RefreshTokenMutation) Fields() []string {
 	}
 	if m.obsolete_token != nil {
 		fields = append(fields, refreshtoken.FieldObsoleteToken)
+	}
+	if m.dpop_jkt != nil {
+		fields = append(fields, refreshtoken.FieldDpopJkt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, refreshtoken.FieldCreatedAt)
@@ -10064,6 +10158,8 @@ func (m *RefreshTokenMutation) Field(name string) (ent.Value, bool) {
 		return m.Token()
 	case refreshtoken.FieldObsoleteToken:
 		return m.ObsoleteToken()
+	case refreshtoken.FieldDpopJkt:
+		return m.DpopJkt()
 	case refreshtoken.FieldCreatedAt:
 		return m.CreatedAt()
 	case refreshtoken.FieldLastUsed:
@@ -10103,6 +10199,8 @@ func (m *RefreshTokenMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldToken(ctx)
 	case refreshtoken.FieldObsoleteToken:
 		return m.OldObsoleteToken(ctx)
+	case refreshtoken.FieldDpopJkt:
+		return m.OldDpopJkt(ctx)
 	case refreshtoken.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case refreshtoken.FieldLastUsed:
@@ -10206,6 +10304,13 @@ func (m *RefreshTokenMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetObsoleteToken(v)
+		return nil
+	case refreshtoken.FieldDpopJkt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDpopJkt(v)
 		return nil
 	case refreshtoken.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -10329,6 +10434,9 @@ func (m *RefreshTokenMutation) ResetField(name string) error {
 		return nil
 	case refreshtoken.FieldObsoleteToken:
 		m.ResetObsoleteToken()
+		return nil
+	case refreshtoken.FieldDpopJkt:
+		m.ResetDpopJkt()
 		return nil
 	case refreshtoken.FieldCreatedAt:
 		m.ResetCreatedAt()

@@ -512,4 +512,14 @@ var migrations = []migration{
 			`alter table auth_session add column connector_data bytea;`,
 		},
 	},
+	{
+		stmts: []string{
+			`
+			alter table client
+				add column require_dpop boolean not null default false;`,
+			`
+			alter table refresh_token
+				add column dpop_jkt text not null default '';`,
+		},
+	},
 }

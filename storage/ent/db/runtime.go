@@ -194,6 +194,10 @@ func init() {
 	oauth2clientDescRefreshTokenLifetime := oauth2clientFields[12].Descriptor()
 	// oauth2client.DefaultRefreshTokenLifetime holds the default value on creation for the refresh_token_lifetime field.
 	oauth2client.DefaultRefreshTokenLifetime = oauth2clientDescRefreshTokenLifetime.Default.(string)
+	// oauth2clientDescRequireDpop is the schema descriptor for require_dpop field.
+	oauth2clientDescRequireDpop := oauth2clientFields[13].Descriptor()
+	// oauth2client.DefaultRequireDpop holds the default value on creation for the require_dpop field.
+	oauth2client.DefaultRequireDpop = oauth2clientDescRequireDpop.Default.(bool)
 	// oauth2clientDescID is the schema descriptor for id field.
 	oauth2clientDescID := oauth2clientFields[0].Descriptor()
 	// oauth2client.IDValidator is a validator for the "id" field. It is called by the builders before save.
@@ -274,12 +278,16 @@ func init() {
 	refreshtokenDescObsoleteToken := refreshtokenFields[13].Descriptor()
 	// refreshtoken.DefaultObsoleteToken holds the default value on creation for the obsolete_token field.
 	refreshtoken.DefaultObsoleteToken = refreshtokenDescObsoleteToken.Default.(string)
+	// refreshtokenDescDpopJkt is the schema descriptor for dpop_jkt field.
+	refreshtokenDescDpopJkt := refreshtokenFields[14].Descriptor()
+	// refreshtoken.DefaultDpopJkt holds the default value on creation for the dpop_jkt field.
+	refreshtoken.DefaultDpopJkt = refreshtokenDescDpopJkt.Default.(string)
 	// refreshtokenDescCreatedAt is the schema descriptor for created_at field.
-	refreshtokenDescCreatedAt := refreshtokenFields[14].Descriptor()
+	refreshtokenDescCreatedAt := refreshtokenFields[15].Descriptor()
 	// refreshtoken.DefaultCreatedAt holds the default value on creation for the created_at field.
 	refreshtoken.DefaultCreatedAt = refreshtokenDescCreatedAt.Default.(func() time.Time)
 	// refreshtokenDescLastUsed is the schema descriptor for last_used field.
-	refreshtokenDescLastUsed := refreshtokenFields[15].Descriptor()
+	refreshtokenDescLastUsed := refreshtokenFields[16].Descriptor()
 	// refreshtoken.DefaultLastUsed holds the default value on creation for the last_used field.
 	refreshtoken.DefaultLastUsed = refreshtokenDescLastUsed.Default.(func() time.Time)
 	// refreshtokenDescID is the schema descriptor for id field.

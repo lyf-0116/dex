@@ -217,6 +217,20 @@ func (_u *RefreshTokenUpdate) SetNillableObsoleteToken(v *string) *RefreshTokenU
 	return _u
 }
 
+// SetDpopJkt sets the "dpop_jkt" field.
+func (_u *RefreshTokenUpdate) SetDpopJkt(v string) *RefreshTokenUpdate {
+	_u.mutation.SetDpopJkt(v)
+	return _u
+}
+
+// SetNillableDpopJkt sets the "dpop_jkt" field if the given value is not nil.
+func (_u *RefreshTokenUpdate) SetNillableDpopJkt(v *string) *RefreshTokenUpdate {
+	if v != nil {
+		_u.SetDpopJkt(*v)
+	}
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *RefreshTokenUpdate) SetCreatedAt(v time.Time) *RefreshTokenUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -366,6 +380,9 @@ func (_u *RefreshTokenUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if value, ok := _u.mutation.ObsoleteToken(); ok {
 		_spec.SetField(refreshtoken.FieldObsoleteToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DpopJkt(); ok {
+		_spec.SetField(refreshtoken.FieldDpopJkt, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(refreshtoken.FieldCreatedAt, field.TypeTime, value)
@@ -581,6 +598,20 @@ func (_u *RefreshTokenUpdateOne) SetNillableObsoleteToken(v *string) *RefreshTok
 	return _u
 }
 
+// SetDpopJkt sets the "dpop_jkt" field.
+func (_u *RefreshTokenUpdateOne) SetDpopJkt(v string) *RefreshTokenUpdateOne {
+	_u.mutation.SetDpopJkt(v)
+	return _u
+}
+
+// SetNillableDpopJkt sets the "dpop_jkt" field if the given value is not nil.
+func (_u *RefreshTokenUpdateOne) SetNillableDpopJkt(v *string) *RefreshTokenUpdateOne {
+	if v != nil {
+		_u.SetDpopJkt(*v)
+	}
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *RefreshTokenUpdateOne) SetCreatedAt(v time.Time) *RefreshTokenUpdateOne {
 	_u.mutation.SetCreatedAt(v)
@@ -760,6 +791,9 @@ func (_u *RefreshTokenUpdateOne) sqlSave(ctx context.Context) (_node *RefreshTok
 	}
 	if value, ok := _u.mutation.ObsoleteToken(); ok {
 		_spec.SetField(refreshtoken.FieldObsoleteToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DpopJkt(); ok {
+		_spec.SetField(refreshtoken.FieldDpopJkt, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(refreshtoken.FieldCreatedAt, field.TypeTime, value)

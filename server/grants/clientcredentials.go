@@ -77,6 +77,7 @@ func (g *clientCredentials) Authorize(ctx context.Context, req *Request, client 
 		// connectors with an empty ID via the config and API is prohibited.
 		ConnectorID: "",
 		Nonce:       req.Nonce,
+		DPoPJKT:     req.DPoPJKT,
 	}
 	return issueTokens(ctx, g.logger, g.issuer, auth, "", false)
 }

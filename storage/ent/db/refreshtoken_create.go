@@ -122,6 +122,20 @@ func (_c *RefreshTokenCreate) SetNillableObsoleteToken(v *string) *RefreshTokenC
 	return _c
 }
 
+// SetDpopJkt sets the "dpop_jkt" field.
+func (_c *RefreshTokenCreate) SetDpopJkt(v string) *RefreshTokenCreate {
+	_c.mutation.SetDpopJkt(v)
+	return _c
+}
+
+// SetNillableDpopJkt sets the "dpop_jkt" field if the given value is not nil.
+func (_c *RefreshTokenCreate) SetNillableDpopJkt(v *string) *RefreshTokenCreate {
+	if v != nil {
+		_c.SetDpopJkt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *RefreshTokenCreate) SetCreatedAt(v time.Time) *RefreshTokenCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -203,6 +217,10 @@ func (_c *RefreshTokenCreate) defaults() {
 		v := refreshtoken.DefaultObsoleteToken
 		_c.mutation.SetObsoleteToken(v)
 	}
+	if _, ok := _c.mutation.DpopJkt(); !ok {
+		v := refreshtoken.DefaultDpopJkt
+		_c.mutation.SetDpopJkt(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := refreshtoken.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -259,6 +277,9 @@ func (_c *RefreshTokenCreate) check() error {
 	}
 	if _, ok := _c.mutation.ObsoleteToken(); !ok {
 		return &ValidationError{Name: "obsolete_token", err: errors.New(`db: missing required field "RefreshToken.obsolete_token"`)}
+	}
+	if _, ok := _c.mutation.DpopJkt(); !ok {
+		return &ValidationError{Name: "dpop_jkt", err: errors.New(`db: missing required field "RefreshToken.dpop_jkt"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`db: missing required field "RefreshToken.created_at"`)}
@@ -357,6 +378,10 @@ func (_c *RefreshTokenCreate) createSpec() (*RefreshToken, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.ObsoleteToken(); ok {
 		_spec.SetField(refreshtoken.FieldObsoleteToken, field.TypeString, value)
 		_node.ObsoleteToken = value
+	}
+	if value, ok := _c.mutation.DpopJkt(); ok {
+		_spec.SetField(refreshtoken.FieldDpopJkt, field.TypeString, value)
+		_node.DpopJkt = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(refreshtoken.FieldCreatedAt, field.TypeTime, value)

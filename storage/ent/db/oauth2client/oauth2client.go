@@ -35,6 +35,8 @@ const (
 	FieldBackchannelLogoutURI = "backchannel_logout_uri"
 	// FieldRefreshTokenLifetime holds the string denoting the refresh_token_lifetime field in the database.
 	FieldRefreshTokenLifetime = "refresh_token_lifetime"
+	// FieldRequireDpop holds the string denoting the require_dpop field in the database.
+	FieldRequireDpop = "require_dpop"
 	// FieldClientCredentialsClaims holds the string denoting the client_credentials_claims field in the database.
 	FieldClientCredentialsClaims = "client_credentials_claims"
 	// Table holds the table name of the oauth2client in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldSSOSharedWith,
 	FieldBackchannelLogoutURI,
 	FieldRefreshTokenLifetime,
+	FieldRequireDpop,
 	FieldClientCredentialsClaims,
 }
 
@@ -74,6 +77,8 @@ var (
 	DefaultBackchannelLogoutURI string
 	// DefaultRefreshTokenLifetime holds the default value on creation for the "refresh_token_lifetime" field.
 	DefaultRefreshTokenLifetime string
+	// DefaultRequireDpop holds the default value on creation for the "require_dpop" field.
+	DefaultRequireDpop bool
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(string) error
 )
@@ -114,4 +119,9 @@ func ByBackchannelLogoutURI(opts ...sql.OrderTermOption) OrderOption {
 // ByRefreshTokenLifetime orders the results by the refresh_token_lifetime field.
 func ByRefreshTokenLifetime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRefreshTokenLifetime, opts...).ToFunc()
+}
+
+// ByRequireDpop orders the results by the require_dpop field.
+func ByRequireDpop(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequireDpop, opts...).ToFunc()
 }

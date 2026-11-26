@@ -15,6 +15,7 @@ const (
 	InvalidGrant            = "invalid_grant"
 	InvalidClient           = "invalid_client"
 	InvalidTarget           = "invalid_target"
+	InvalidDPoPProof        = "invalid_dpop_proof"
 	InactiveToken           = "inactive_token"
 	LoginRequired           = "login_required"
 	InteractionRequired     = "interaction_required"

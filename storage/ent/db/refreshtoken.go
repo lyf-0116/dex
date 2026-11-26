@@ -44,6 +44,8 @@ type RefreshToken struct {
 	Token string `json:"token,omitempty"`
 	// ObsoleteToken holds the value of the "obsolete_token" field.
 	ObsoleteToken string `json:"obsolete_token,omitempty"`
+	// DpopJkt holds the value of the "dpop_jkt" field.
+	DpopJkt string `json:"dpop_jkt,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// LastUsed holds the value of the "last_used" field.
@@ -60,7 +62,7 @@ func (*RefreshToken) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case refreshtoken.FieldClaimsEmailVerified:
 			values[i] = new(sql.NullBool)
-		case refreshtoken.FieldID, refreshtoken.FieldClientID, refreshtoken.FieldNonce, refreshtoken.FieldClaimsUserID, refreshtoken.FieldClaimsUsername, refreshtoken.FieldClaimsEmail, refreshtoken.FieldClaimsPreferredUsername, refreshtoken.FieldConnectorID, refreshtoken.FieldToken, refreshtoken.FieldObsoleteToken:
+		case refreshtoken.FieldID, refreshtoken.FieldClientID, refreshtoken.FieldNonce, refreshtoken.FieldClaimsUserID, refreshtoken.FieldClaimsUsername, refreshtoken.FieldClaimsEmail, refreshtoken.FieldClaimsPreferredUsername, refreshtoken.FieldConnectorID, refreshtoken.FieldToken, refreshtoken.FieldObsoleteToken, refreshtoken.FieldDpopJkt:
 			values[i] = new(sql.NullString)
 		case refreshtoken.FieldCreatedAt, refreshtoken.FieldLastUsed:
 			values[i] = new(sql.NullTime)
@@ -167,6 +169,12 @@ func (_m *RefreshToken) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ObsoleteToken = value.String
 			}
+		case refreshtoken.FieldDpopJkt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field dpop_jkt", values[i])
+			} else if value.Valid {
+				_m.DpopJkt = value.String
+			}
 		case refreshtoken.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -255,6 +263,9 @@ func (_m *RefreshToken) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("obsolete_token=")
 	builder.WriteString(_m.ObsoleteToken)
+	builder.WriteString(", ")
+	builder.WriteString("dpop_jkt=")
+	builder.WriteString(_m.DpopJkt)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

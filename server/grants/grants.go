@@ -8,10 +8,12 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/server/connectors"
+	"github.com/dexidp/dex/server/dpop"
 	"github.com/dexidp/dex/server/internal"
 	"github.com/dexidp/dex/server/oauth2"
 	"github.com/dexidp/dex/server/router"
@@ -55,6 +57,10 @@ type Request struct {
 	// the connector, so it is fetched and decoded once and reused in Authorize.
 	refresh   *storage.RefreshToken
 	refreshID *internal.RefreshToken
+
+	// DPoPJKT is the thumbprint of the key that proved possession in the DPoP
+	// header. Empty for a bearer request.
+	DPoPJKT string
 }
 
 // parseRequest reads the whole token request form once. Client credentials come
@@ -160,6 +166,9 @@ type Handler struct {
 	IDJAGMetrics        *IDJAGMetrics
 
 	grants map[string]Grant
+
+	replayOnce sync.Once
+	replay     *dpop.ReplayCache
 }
 
 func (h *Handler) register(supported []string, gs ...Grant) {
@@ -184,6 +193,13 @@ func (h *Handler) Mount(m router.Mux) {
 		&deviceCode{storage: h.Storage, now: h.Now, logger: h.Logger},
 	)
 	m.HandleCORS("/token", h.handleToken)
+}
+
+func (h *Handler) proofReplayCache() *dpop.ReplayCache {
+	h.replayOnce.Do(func() {
+		h.replay = dpop.NewReplayCache()
+	})
+	return h.replay
 }
 
 // handleToken serves /token: it validates the request shape and dispatches to the
@@ -233,13 +249,39 @@ func (h *Handler) dispatch(w http.ResponseWriter, r *http.Request, grantType str
 		}
 	}
 
-	// 2. Validate the requested scopes.
+	// 2. Validate proof of possession. A client that declared DPoP must always
+	// provide a proof; every other client can continue to use bearer tokens.
+	proof := r.Header.Get(dpop.Header)
+	if client.RequiresDPoP() && proof == "" {
+		h.writeError(ctx, w, &oauth2.Error{Type: oauth2.InvalidDPoPProof, Description: "DPoP proof is required for this client.", Status: http.StatusBadRequest})
+		return true
+	}
+	if proof != "" {
+		now := time.Now()
+		if h.Now != nil {
+			now = h.Now()
+		}
+		verified, err := dpop.Verify(r, proof, "", now)
+		if err != nil {
+			h.Logger.InfoContext(ctx, "invalid DPoP proof", "client_id", client.ID, "err", err)
+			h.writeError(ctx, w, &oauth2.Error{Type: oauth2.InvalidDPoPProof, Description: "Invalid DPoP proof.", Status: http.StatusBadRequest})
+			return true
+		}
+		if err := h.proofReplayCache().CheckAndStore(verified, now); err != nil {
+			h.Logger.InfoContext(ctx, "replayed DPoP proof", "client_id", client.ID, "err", err)
+			h.writeError(ctx, w, &oauth2.Error{Type: oauth2.InvalidDPoPProof, Description: "Invalid DPoP proof.", Status: http.StatusBadRequest})
+			return true
+		}
+		req.DPoPJKT = verified.JKT
+	}
+
+	// 3. Validate the requested scopes.
 	if oerr := h.validateScopes(ctx, client, req, grant.ScopePolicy()); oerr != nil {
 		h.writeError(ctx, w, oerr)
 		return true
 	}
 
-	// 3. Resolve the grant's connector and enforce the connector-authorization
+	// 4. Resolve the grant's connector and enforce the connector-authorization
 	// invariant. A grant that uses no connector resolves to the zero Connector.
 	connID, oerr := grant.ConnectorID(ctx, req, client)
 	if oerr != nil {
@@ -252,7 +294,7 @@ func (h *Handler) dispatch(w http.ResponseWriter, r *http.Request, grantType str
 		return true
 	}
 
-	// 4. Let the grant prove the identity and produce the response.
+	// 5. Let the grant prove the identity and produce the response.
 	resp, err := grant.Authorize(ctx, req, client, conn)
 	if err != nil {
 		h.writeError(ctx, w, err)

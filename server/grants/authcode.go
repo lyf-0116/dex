@@ -69,6 +69,7 @@ func (g *authorizationCode) Authorize(ctx context.Context, req *Request, client 
 	if err != nil {
 		return nil, err
 	}
+	auth.DPoPJKT = req.DPoPJKT
 	return issueTokens(ctx, g.logger, g.issuer, auth, authCode.ID, withRefresh)
 }
 

@@ -119,6 +119,11 @@ func ObsoleteToken(v string) predicate.RefreshToken {
 	return predicate.RefreshToken(sql.FieldEQ(FieldObsoleteToken, v))
 }
 
+// DpopJkt applies equality check predicate on the "dpop_jkt" field. It's identical to DpopJktEQ.
+func DpopJkt(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldEQ(FieldDpopJkt, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.RefreshToken {
 	return predicate.RefreshToken(sql.FieldEQ(FieldCreatedAt, v))
@@ -792,6 +797,71 @@ func ObsoleteTokenEqualFold(v string) predicate.RefreshToken {
 // ObsoleteTokenContainsFold applies the ContainsFold predicate on the "obsolete_token" field.
 func ObsoleteTokenContainsFold(v string) predicate.RefreshToken {
 	return predicate.RefreshToken(sql.FieldContainsFold(FieldObsoleteToken, v))
+}
+
+// DpopJktEQ applies the EQ predicate on the "dpop_jkt" field.
+func DpopJktEQ(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldEQ(FieldDpopJkt, v))
+}
+
+// DpopJktNEQ applies the NEQ predicate on the "dpop_jkt" field.
+func DpopJktNEQ(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldNEQ(FieldDpopJkt, v))
+}
+
+// DpopJktIn applies the In predicate on the "dpop_jkt" field.
+func DpopJktIn(vs ...string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldIn(FieldDpopJkt, vs...))
+}
+
+// DpopJktNotIn applies the NotIn predicate on the "dpop_jkt" field.
+func DpopJktNotIn(vs ...string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldNotIn(FieldDpopJkt, vs...))
+}
+
+// DpopJktGT applies the GT predicate on the "dpop_jkt" field.
+func DpopJktGT(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldGT(FieldDpopJkt, v))
+}
+
+// DpopJktGTE applies the GTE predicate on the "dpop_jkt" field.
+func DpopJktGTE(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldGTE(FieldDpopJkt, v))
+}
+
+// DpopJktLT applies the LT predicate on the "dpop_jkt" field.
+func DpopJktLT(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldLT(FieldDpopJkt, v))
+}
+
+// DpopJktLTE applies the LTE predicate on the "dpop_jkt" field.
+func DpopJktLTE(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldLTE(FieldDpopJkt, v))
+}
+
+// DpopJktContains applies the Contains predicate on the "dpop_jkt" field.
+func DpopJktContains(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldContains(FieldDpopJkt, v))
+}
+
+// DpopJktHasPrefix applies the HasPrefix predicate on the "dpop_jkt" field.
+func DpopJktHasPrefix(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldHasPrefix(FieldDpopJkt, v))
+}
+
+// DpopJktHasSuffix applies the HasSuffix predicate on the "dpop_jkt" field.
+func DpopJktHasSuffix(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldHasSuffix(FieldDpopJkt, v))
+}
+
+// DpopJktEqualFold applies the EqualFold predicate on the "dpop_jkt" field.
+func DpopJktEqualFold(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldEqualFold(FieldDpopJkt, v))
+}
+
+// DpopJktContainsFold applies the ContainsFold predicate on the "dpop_jkt" field.
+func DpopJktContainsFold(v string) predicate.RefreshToken {
+	return predicate.RefreshToken(sql.FieldContainsFold(FieldDpopJkt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

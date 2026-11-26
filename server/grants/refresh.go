@@ -63,6 +63,10 @@ func (g *refresh) ConnectorID(ctx context.Context, req *Request, client storage.
 	if err != nil {
 		return "", refreshLookupError(err)
 	}
+	if refreshToken.DPoPJKT != "" && refreshToken.DPoPJKT != req.DPoPJKT {
+		g.logger.WarnContext(ctx, "refresh: DPoP key does not match token binding", "client_id", client.ID)
+		return "", &oauth2.Error{Type: oauth2.InvalidGrant, Description: "Refresh token is bound to a different DPoP key.", Status: http.StatusBadRequest}
+	}
 
 	req.refresh, req.refreshID = refreshToken, token
 	return refreshToken.ConnectorID, nil
@@ -160,6 +164,7 @@ func (g *refresh) Authorize(ctx context.Context, req *Request, client storage.Cl
 		Nonce:       refreshToken.Nonce,
 		AuthTime:    authTime,
 		SessionID:   sessionID,
+		DPoPJKT:     req.DPoPJKT,
 	}
 
 	accessToken, _, err := g.issuer.SignAccessToken(ctx, auth)
@@ -173,7 +178,7 @@ func (g *refresh) Authorize(ctx context.Context, req *Request, client storage.Cl
 		return nil, &oauth2.Error{Type: oauth2.InvalidRequest, Status: http.StatusInternalServerError}
 	}
 
-	ts := tokens.TokenSet{AccessToken: accessToken, IDToken: idToken, RefreshToken: rawNewToken, Expiry: expiry}
+	ts := tokens.TokenSet{AccessToken: accessToken, IDToken: idToken, RefreshToken: rawNewToken, Expiry: expiry, DPoPJKT: req.DPoPJKT}
 	return ts.Response(g.now()), nil
 }
 

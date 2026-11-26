@@ -233,6 +233,20 @@ func (_u *OAuth2ClientUpdate) ClearRefreshTokenLifetime() *OAuth2ClientUpdate {
 	return _u
 }
 
+// SetRequireDpop sets the "require_dpop" field.
+func (_u *OAuth2ClientUpdate) SetRequireDpop(v bool) *OAuth2ClientUpdate {
+	_u.mutation.SetRequireDpop(v)
+	return _u
+}
+
+// SetNillableRequireDpop sets the "require_dpop" field if the given value is not nil.
+func (_u *OAuth2ClientUpdate) SetNillableRequireDpop(v *bool) *OAuth2ClientUpdate {
+	if v != nil {
+		_u.SetRequireDpop(*v)
+	}
+	return _u
+}
+
 // SetClientCredentialsClaims sets the "client_credentials_claims" field.
 func (_u *OAuth2ClientUpdate) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientUpdate {
 	_u.mutation.SetClientCredentialsClaims(v)
@@ -375,6 +389,9 @@ func (_u *OAuth2ClientUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.RefreshTokenLifetimeCleared() {
 		_spec.ClearField(oauth2client.FieldRefreshTokenLifetime, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequireDpop(); ok {
+		_spec.SetField(oauth2client.FieldRequireDpop, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ClientCredentialsClaims(); ok {
 		_spec.SetField(oauth2client.FieldClientCredentialsClaims, field.TypeJSON, value)
@@ -606,6 +623,20 @@ func (_u *OAuth2ClientUpdateOne) ClearRefreshTokenLifetime() *OAuth2ClientUpdate
 	return _u
 }
 
+// SetRequireDpop sets the "require_dpop" field.
+func (_u *OAuth2ClientUpdateOne) SetRequireDpop(v bool) *OAuth2ClientUpdateOne {
+	_u.mutation.SetRequireDpop(v)
+	return _u
+}
+
+// SetNillableRequireDpop sets the "require_dpop" field if the given value is not nil.
+func (_u *OAuth2ClientUpdateOne) SetNillableRequireDpop(v *bool) *OAuth2ClientUpdateOne {
+	if v != nil {
+		_u.SetRequireDpop(*v)
+	}
+	return _u
+}
+
 // SetClientCredentialsClaims sets the "client_credentials_claims" field.
 func (_u *OAuth2ClientUpdateOne) SetClientCredentialsClaims(v *storage.ClientCredentialsClaims) *OAuth2ClientUpdateOne {
 	_u.mutation.SetClientCredentialsClaims(v)
@@ -778,6 +809,9 @@ func (_u *OAuth2ClientUpdateOne) sqlSave(ctx context.Context) (_node *OAuth2Clie
 	}
 	if _u.mutation.RefreshTokenLifetimeCleared() {
 		_spec.ClearField(oauth2client.FieldRefreshTokenLifetime, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequireDpop(); ok {
+		_spec.SetField(oauth2client.FieldRequireDpop, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ClientCredentialsClaims(); ok {
 		_spec.SetField(oauth2client.FieldClientCredentialsClaims, field.TypeJSON, value)

@@ -21,6 +21,10 @@ type Authorization struct {
 	AuthTime      time.Time
 	ConnectorData []byte
 
+	// DPoPJKT, when set, is written to the token's cnf.jkt claim and makes the
+	// token a DPoP-bound token rather than a bearer token.
+	DPoPJKT string
+
 	// SessionID is the browser session this authorization belongs to, emitted as
 	// the "sid" claim. Only the flows that actually pass through a browser set it.
 	// Resolving it from the user's identity instead would attach whatever session
@@ -35,6 +39,7 @@ type TokenSet struct {
 	IDToken      string
 	RefreshToken string
 	Expiry       time.Time
+	DPoPJKT      string
 }
 
 type Response struct {
@@ -48,12 +53,16 @@ type Response struct {
 }
 
 // Response renders the token set as an OAuth2 token response as of now, filling
-// in the bearer token type and the relative expiry. Grant-specific fields
-// (IssuedTokenType, Scope) are left to the caller.
+// in the token type (DPoP when bound) and the relative expiry. Grant-specific
+// fields (IssuedTokenType, Scope) are left to the caller.
 func (ts TokenSet) Response(now time.Time) Response {
+	tokenType := "bearer"
+	if ts.DPoPJKT != "" {
+		tokenType = "DPoP"
+	}
 	return Response{
 		AccessToken:  ts.AccessToken,
-		TokenType:    "bearer",
+		TokenType:    tokenType,
 		ExpiresIn:    int(ts.Expiry.Sub(now).Seconds()),
 		RefreshToken: ts.RefreshToken,
 		IDToken:      ts.IDToken,

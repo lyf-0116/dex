@@ -169,6 +169,8 @@ type RefreshToken struct {
 
 	ClientID string `json:"client_id"`
 
+	DPoPJKT string `json:"dpop_jkt,omitempty"`
+
 	ConnectorID   string `json:"connector_id"`
 	ConnectorData []byte `json:"connector_data"`
 	Claims        Claims `json:"claims"`
@@ -186,6 +188,7 @@ func toStorageRefreshToken(r RefreshToken) storage.RefreshToken {
 		CreatedAt:     r.CreatedAt,
 		LastUsed:      r.LastUsed,
 		ClientID:      r.ClientID,
+		DPoPJKT:       r.DPoPJKT,
 		ConnectorID:   r.ConnectorID,
 		ConnectorData: r.ConnectorData,
 		Scopes:        r.Scopes,
@@ -202,6 +205,7 @@ func fromStorageRefreshToken(r storage.RefreshToken) RefreshToken {
 		CreatedAt:     r.CreatedAt,
 		LastUsed:      r.LastUsed,
 		ClientID:      r.ClientID,
+		DPoPJKT:       r.DPoPJKT,
 		ConnectorID:   r.ConnectorID,
 		ConnectorData: r.ConnectorData,
 		Scopes:        r.Scopes,

@@ -29,6 +29,8 @@ type IDJAGClaims struct {
 	Scope    string `json:"scope,omitempty"`
 	Email    string `json:"email,omitempty"`
 	AuthTime int64  `json:"auth_time,omitempty"`
+
+	Confirmation *Confirmation `json:"cnf,omitempty"`
 }
 
 // SignIDJAG fills in iss, jti, iat and exp and signs the claims as an ID-JAG.

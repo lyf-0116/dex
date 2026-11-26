@@ -59,6 +59,21 @@ func (a Audience) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]string(a))
 }
 
+// UnmarshalJSON accepts both the single-string and array forms of aud.
+func (a *Audience) UnmarshalJSON(data []byte) error {
+	var single string
+	if err := json.Unmarshal(data, &single); err == nil {
+		*a = Audience{single}
+		return nil
+	}
+	var multiple []string
+	if err := json.Unmarshal(data, &multiple); err != nil {
+		return err
+	}
+	*a = multiple
+	return nil
+}
+
 type IDTokenClaims struct {
 	Issuer           string   `json:"iss"`
 	Subject          string   `json:"sub"`
@@ -88,6 +103,15 @@ type IDTokenClaims struct {
 	PreferredUsername string `json:"preferred_username,omitempty"`
 
 	FederatedIDClaims *FederatedIDClaims `json:"federated_claims,omitempty"`
+
+	// Confirmation binds the token to the public key that proved possession of
+	// the corresponding private key at issuance. It is absent for bearer tokens.
+	Confirmation *Confirmation `json:"cnf,omitempty"`
+}
+
+// Confirmation is the JWT confirmation claim defined by RFC 7800.
+type Confirmation struct {
+	JWKThumbprint string `json:"jkt,omitempty"`
 }
 
 // FederatedIDClaims carries the upstream connector's identity for the

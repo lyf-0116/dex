@@ -39,6 +39,8 @@ const (
 	FieldToken = "token"
 	// FieldObsoleteToken holds the string denoting the obsolete_token field in the database.
 	FieldObsoleteToken = "obsolete_token"
+	// FieldDpopJkt holds the string denoting the dpop_jkt field in the database.
+	FieldDpopJkt = "dpop_jkt"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldLastUsed holds the string denoting the last_used field in the database.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldConnectorData,
 	FieldToken,
 	FieldObsoleteToken,
+	FieldDpopJkt,
 	FieldCreatedAt,
 	FieldLastUsed,
 }
@@ -90,6 +93,8 @@ var (
 	DefaultToken string
 	// DefaultObsoleteToken holds the default value on creation for the "obsolete_token" field.
 	DefaultObsoleteToken string
+	// DefaultDpopJkt holds the default value on creation for the "dpop_jkt" field.
+	DefaultDpopJkt string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultLastUsed holds the default value on creation for the "last_used" field.
@@ -154,6 +159,11 @@ func ByToken(opts ...sql.OrderTermOption) OrderOption {
 // ByObsoleteToken orders the results by the obsolete_token field.
 func ByObsoleteToken(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldObsoleteToken, opts...).ToFunc()
+}
+
+// ByDpopJkt orders the results by the dpop_jkt field.
+func ByDpopJkt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDpopJkt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

@@ -76,6 +76,9 @@ func (RefreshToken) Fields() []ent.Field {
 		field.Text("obsolete_token").
 			SchemaType(textSchema).
 			Default(""),
+		field.Text("dpop_jkt").
+			SchemaType(textSchema).
+			Default(""),
 
 		field.Time("created_at").
 			SchemaType(timeSchema).

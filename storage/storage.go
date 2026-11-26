@@ -214,6 +214,14 @@ type Client struct {
 	// Empty slice [] means explicitly share with no one.
 	SSOSharedWith []string `json:"ssoSharedWith" yaml:"ssoSharedWith"`
 
+	// RequireDPoP rejects token requests from this client unless they carry a
+	// valid DPoP proof. Tokens issued to it are then bound to the proof key.
+	RequireDPoP bool `json:"requireDPoP,omitempty"`
+
+	// DPoPRequired is an alias for RequireDPoP kept for clients that use the
+	// alternative spelling.
+	DPoPRequired bool `json:"dpopRequired,omitempty"`
+
 	// ClientCredentialsClaims holds identity claims used when issuing tokens via the
 	// client_credentials grant. Kept separate from core Client fields to avoid mixing
 	// application identity (ID, secret, redirect URIs) with user-like identity attributes.
@@ -251,6 +259,12 @@ func ValidateRefreshTokenLifetime(lifetime string) error {
 // browser session that issued them.
 func (c Client) RefreshBoundToSession() bool {
 	return c.RefreshTokenLifetime == RefreshTokenLifetimeSession
+}
+
+// RequiresDPoP reports whether every token request for this client must carry a
+// valid DPoP proof.
+func (c Client) RequiresDPoP() bool {
+	return c.RequireDPoP || c.DPoPRequired
 }
 
 // ClientCredentialsClaims contains claims that are included in tokens issued via
@@ -406,6 +420,10 @@ type RefreshToken struct {
 
 	// Client this refresh token is valid for.
 	ClientID string
+
+	// DPoPJKT binds the refresh token to the public key that obtained it. Empty
+	// for a bearer refresh token.
+	DPoPJKT string `json:"dpopJKT,omitempty"`
 
 	// Authentication data provided by an upstream source.
 	ConnectorID   string

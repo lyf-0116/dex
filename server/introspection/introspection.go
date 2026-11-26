@@ -108,6 +108,10 @@ type IntrospectionExtra struct {
 	PreferredUsername string `json:"preferred_username,omitempty"`
 
 	FederatedIDClaims *tokens.FederatedIDClaims `json:"federated_claims,omitempty"`
+
+	// Confirmation is present for sender-constrained tokens. Its jkt value is
+	// the thumbprint of the key a resource request must prove possession of.
+	Confirmation *tokens.Confirmation `json:"cnf,omitempty"`
 }
 
 type TokenTypeEnum int
@@ -287,8 +291,9 @@ func (h *Handler) introspectRefreshToken(ctx context.Context, token string) (*In
 			Groups:            refresh.Claims.Groups,
 			Name:              refresh.Claims.Username,
 			PreferredUsername: refresh.Claims.PreferredUsername,
+			Confirmation:      confirmation(refresh.DPoPJKT),
 		},
-		TokenType: "Bearer",
+		TokenType: tokenTypeForJKT(refresh.DPoPJKT),
 		TokenUse:  "refresh_token",
 	}, nil
 }
@@ -360,9 +365,30 @@ func (h *Handler) introspectAccessToken(ctx context.Context, token string) (*Int
 		Issuer:    h.Issuer,
 
 		Extra:     claims,
-		TokenType: "Bearer",
+		TokenType: tokenType(claims.Confirmation),
 		TokenUse:  "access_token",
 	}, nil
+}
+
+func tokenType(confirmation *tokens.Confirmation) string {
+	if confirmation != nil {
+		return tokenTypeForJKT(confirmation.JWKThumbprint)
+	}
+	return "Bearer"
+}
+
+func tokenTypeForJKT(jkt string) string {
+	if jkt != "" {
+		return "DPoP"
+	}
+	return "Bearer"
+}
+
+func confirmation(jkt string) *tokens.Confirmation {
+	if jkt == "" {
+		return nil
+	}
+	return &tokens.Confirmation{JWKThumbprint: jkt}
 }
 
 func (h *Handler) handle(w http.ResponseWriter, r *http.Request) {

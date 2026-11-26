@@ -297,6 +297,8 @@ type Client struct {
 	BackchannelLogoutURI string `json:"backchannelLogoutURI,omitempty"`
 
 	RefreshTokenLifetime string `json:"refreshTokenLifetime,omitempty"`
+
+	RequireDPoP bool `json:"requireDPoP,omitempty"`
 }
 
 // ClientList is a list of Clients.
@@ -329,6 +331,7 @@ func (cli *client) fromStorageClient(c storage.Client) Client {
 		SSOSharedWith:          c.SSOSharedWith,
 		BackchannelLogoutURI:   c.BackchannelLogoutURI,
 		RefreshTokenLifetime:   c.RefreshTokenLifetime,
+		RequireDPoP:            c.RequiresDPoP(),
 	}
 }
 
@@ -347,6 +350,7 @@ func toStorageClient(c Client) storage.Client {
 		SSOSharedWith:          c.SSOSharedWith,
 		BackchannelLogoutURI:   c.BackchannelLogoutURI,
 		RefreshTokenLifetime:   c.RefreshTokenLifetime,
+		RequireDPoP:            c.RequireDPoP,
 	}
 }
 
@@ -655,6 +659,8 @@ type RefreshToken struct {
 
 	Nonce string `json:"nonce,omitempty"`
 
+	DPoPJKT string `json:"dpopJKT,omitempty"`
+
 	Claims        Claims `json:"claims,omitempty"`
 	ConnectorID   string `json:"connectorID,omitempty"`
 	ConnectorData []byte `json:"connectorData,omitempty"`
@@ -679,6 +685,7 @@ func toStorageRefreshToken(r RefreshToken) storage.RefreshToken {
 		ConnectorData: r.ConnectorData,
 		Scopes:        r.Scopes,
 		Nonce:         r.Nonce,
+		DPoPJKT:       r.DPoPJKT,
 		Claims:        toStorageClaims(r.Claims),
 	}
 }
@@ -702,6 +709,7 @@ func (cli *client) fromStorageRefreshToken(r storage.RefreshToken) RefreshToken 
 		ConnectorData: r.ConnectorData,
 		Scopes:        r.Scopes,
 		Nonce:         r.Nonce,
+		DPoPJKT:       r.DPoPJKT,
 		Claims:        fromStorageClaims(r.Claims),
 	}
 }
