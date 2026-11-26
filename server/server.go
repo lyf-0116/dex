@@ -302,6 +302,7 @@ func (s *Server) mount(routes router.Mux, c Config, rc resolvedConfig) {
 			Logger:           s.logger,
 			Issuer:           s.issuer,
 			Connectors:       s.connectors,
+			PKCE:             c.PKCE,
 		},
 		&home.Handler{
 			IssuerURL: s.issuerURL,

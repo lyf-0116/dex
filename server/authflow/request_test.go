@@ -277,6 +277,24 @@ func TestParseAuthorizationRequest(t *testing.T) {
 			expectedError: &redirectedAuthErr{Type: oauth2.InvalidRequest},
 		},
 		{
+			name: "PKCE invalid code_challenge_method without code_challenge",
+			clients: []storage.Client{
+				{
+					ID:           "bar",
+					RedirectURIs: []string{"https://example.com/bar"},
+				},
+			},
+			supportedResponseTypes: []string{"code"},
+			queryParams: map[string]string{
+				"client_id":             "bar",
+				"redirect_uri":          "https://example.com/bar",
+				"response_type":         "code",
+				"code_challenge_method": "invalid_method",
+				"scope":                 "openid email profile",
+			},
+			expectedError: &redirectedAuthErr{Type: oauth2.InvalidRequest},
+		},
+		{
 			name: "No response type",
 			clients: []storage.Client{
 				{

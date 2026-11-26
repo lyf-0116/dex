@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -149,13 +148,8 @@ func sessionMatchesHint(session *storage.AuthSession, hintSubject string) bool {
 	return encoded == hintSubject
 }
 
-// PKCEConfig holds PKCE (Proof Key for Code Exchange) settings.
-type PKCEConfig struct {
-	// If true, PKCE is required for all authorization code flows.
-	Enforce bool
-	// Supported code challenge methods. Defaults to ["S256", "plain"].
-	CodeChallengeMethodsSupported []string
-}
+// PKCEConfig is the shared PKCE configuration used by every flow.
+type PKCEConfig = oauth2.PKCEConfig
 
 // ValidateIDTokenHint verifies the signature and issuer of an id_token_hint.
 // Expired tokens are accepted per OIDC Core 1.0 §3.1.2.1. It returns the verified
@@ -196,9 +190,8 @@ func (h *Handler) parseAuthorizationRequest(r *http.Request) (*storage.AuthReque
 	codeChallenge := q.Get("code_challenge")
 	codeChallengeMethod := q.Get("code_challenge_method")
 
-	if codeChallengeMethod == "" {
-		codeChallengeMethod = oauth2.PKCEMethodPlain
-	}
+	var methodErr error
+	codeChallengeMethod, methodErr = h.PKCE.ValidateCodeChallengeMethod(codeChallengeMethod)
 
 	client, err := h.Storage.GetClient(ctx, clientID)
 	if err != nil {
@@ -248,7 +241,7 @@ func (h *Handler) parseAuthorizationRequest(r *http.Request) (*storage.AuthReque
 		return nil, "", newredirectedAuthErr(oauth2.RequestNotSupported, "Server does not support request parameter.")
 	}
 
-	if codeChallenge != "" && !slices.Contains(h.PKCE.CodeChallengeMethodsSupported, codeChallengeMethod) {
+	if methodErr != nil {
 		return nil, "", newredirectedAuthErr(oauth2.InvalidRequest, "Unsupported PKCE challenge method (%q).", codeChallengeMethod)
 	}
 

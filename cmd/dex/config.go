@@ -316,7 +316,9 @@ func (t TokenExchange) idJAGEnabled() bool {
 
 // PKCE holds the PKCE (Proof Key for Code Exchange) configuration.
 type PKCE struct {
-	// If true, PKCE is required for all authorization code flows.
+	// If true, PKCE is required. Authorization code requests without a
+	// code_challenge are rejected; device authorization requests without one
+	// are allowed through but logged as a warning until legacy clients upgrade.
 	Enforce bool `json:"enforce"`
 	// Supported code challenge methods. Defaults to ["S256", "plain"].
 	CodeChallengeMethodsSupported []string `json:"codeChallengeMethodsSupported"`

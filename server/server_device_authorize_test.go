@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dexidp/dex/server/authflow"
 	"github.com/dexidp/dex/server/device"
 	"github.com/dexidp/dex/storage"
 )
@@ -25,6 +26,8 @@ func TestHandleDeviceCode(t *testing.T) {
 		testName               string
 		clientID               string
 		codeChallengeMethod    string
+		codeChallenge          string
+		pkceConfig             *authflow.PKCEConfig
 		requestType            string
 		scopes                 []string
 		expectedResponseCode   int
@@ -57,6 +60,39 @@ func TestHandleDeviceCode(t *testing.T) {
 			expectedContentType:  "application/json",
 		},
 		{
+			testName:             "S256-only config rejects plain",
+			clientID:             "test",
+			requestType:          "POST",
+			scopes:               []string{"openid", "profile", "email"},
+			codeChallengeMethod:  "plain",
+			codeChallenge:        "123",
+			pkceConfig:           &authflow.PKCEConfig{CodeChallengeMethodsSupported: []string{"S256"}},
+			expectedResponseCode: http.StatusBadRequest,
+			expectedContentType:  "application/json",
+		},
+		{
+			testName:             "S256-only config accepts S256",
+			clientID:             "test",
+			requestType:          "POST",
+			scopes:               []string{"openid", "profile", "email"},
+			codeChallengeMethod:  "S256",
+			codeChallenge:        "123",
+			pkceConfig:           &authflow.PKCEConfig{CodeChallengeMethodsSupported: []string{"S256"}},
+			expectedResponseCode: http.StatusOK,
+			expectedContentType:  "application/json",
+		},
+		{
+			// Enforce applies to the device flow as a warning: legacy clients
+			// without a code_challenge still start the flow.
+			testName:             "Enforce without code_challenge is allowed",
+			clientID:             "test",
+			requestType:          "POST",
+			scopes:               []string{"openid", "profile", "email"},
+			pkceConfig:           &authflow.PKCEConfig{Enforce: true, CodeChallengeMethodsSupported: []string{"S256", "plain"}},
+			expectedResponseCode: http.StatusOK,
+			expectedContentType:  "application/json",
+		},
+		{
 			testName:             "Invalid code challenge method",
 			clientID:             "test",
 			requestType:          "POST",
@@ -80,6 +116,9 @@ func TestHandleDeviceCode(t *testing.T) {
 			httpServer, s := newTestServer(t, func(c *Config) {
 				c.Issuer += "/non-root-path"
 				c.Now = now
+				if tc.pkceConfig != nil {
+					c.PKCE = *tc.pkceConfig
+				}
 			})
 			defer httpServer.Close()
 
@@ -96,6 +135,9 @@ func TestHandleDeviceCode(t *testing.T) {
 			data := url.Values{}
 			data.Set("client_id", tc.clientID)
 			data.Set("code_challenge_method", tc.codeChallengeMethod)
+			if tc.codeChallenge != "" {
+				data.Set("code_challenge", tc.codeChallenge)
+			}
 			for _, scope := range tc.scopes {
 				data.Add("scope", scope)
 			}

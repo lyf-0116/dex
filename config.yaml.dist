@@ -135,7 +135,9 @@ web:
 #
 #   # PKCE (Proof Key for Code Exchange) configuration
 #   pkce:
-#     # If true, PKCE is required for all authorization code flows (OAuth 2.1).
+#     # If true, PKCE is required. Authorization code requests without a
+#     # code_challenge are rejected; device authorization requests without one
+#     # are allowed through but logged as a warning until legacy clients upgrade.
 #     enforce: false
 #     # Supported code challenge methods. Defaults to ["S256", "plain"].
 #     codeChallengeMethodsSupported: ["S256", "plain"]

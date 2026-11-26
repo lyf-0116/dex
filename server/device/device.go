@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -52,6 +51,10 @@ type Handler struct {
 	// via grants.ExchangeAuthCode.
 	Issuer     *tokens.Issuer
 	Connectors *connectors.Cache
+
+	// PKCE is the same policy the authorization code flow uses: the configured
+	// method allow-list is enforced here as well.
+	PKCE oauth2.PKCEConfig
 }
 
 // Mount registers the device authorization routes.
@@ -133,16 +136,21 @@ func (h *Handler) parseDeviceCodeRequest(r *http.Request) (deviceCodeRequest, *d
 		return deviceCodeRequest{}, &deviceFlowError{status: http.StatusNotFound, code: oauth2.InvalidRequest}
 	}
 
-	method := r.Form.Get("code_challenge_method")
-	if method == "" {
-		method = oauth2.PKCEMethodPlain
-	}
-	if method != oauth2.PKCEMethodS256 && method != oauth2.PKCEMethodPlain {
+	codeChallenge := r.Form.Get("code_challenge")
+	method, err := h.PKCE.ValidateCodeChallengeMethod(r.Form.Get("code_challenge_method"))
+	if err != nil {
 		return deviceCodeRequest{}, &deviceFlowError{
 			status:  http.StatusBadRequest,
 			code:    oauth2.InvalidRequest,
-			message: fmt.Sprintf("Unsupported PKCE challenge method (%q).", method),
+			message: err.Error(),
 		}
+	}
+
+	// Enforce applies to the device flow too, but legacy device clients cannot
+	// add a code_challenge without a coordinated upgrade. Until those clients are
+	// migrated, log a warning instead of rejecting the request.
+	if h.PKCE.Enforce && codeChallenge == "" {
+		h.Logger.WarnContext(r.Context(), "PKCE is required but device authorization request was made without a code_challenge")
 	}
 
 	scopes := strings.Fields(r.Form.Get("scope"))
@@ -161,7 +169,7 @@ func (h *Handler) parseDeviceCodeRequest(r *http.Request) (deviceCodeRequest, *d
 		clientSecret: clientSecret,
 		scopes:       scopes,
 		pkce: storage.PKCE{
-			CodeChallenge:       r.Form.Get("code_challenge"),
+			CodeChallenge:       codeChallenge,
 			CodeChallengeMethod: method,
 		},
 	}, nil
